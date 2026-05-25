@@ -97,7 +97,9 @@ async def main():
                 print(f"Forward error: {e}")
 
     await client.start()
-    print("🚀 Forwarder started!")
+print("🚀 Forwarder started!")
+print("✅ Telethon connected successfully!")
+print(f"📡 Listening to channel: {SOURCE_CHANNEL_ID}")
     await client.run_until_disconnected()
 
 asyncio.run(main())
