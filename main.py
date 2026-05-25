@@ -94,5 +94,32 @@ async def handle_message(client, message):
         except Exception as e:
             print(f"Forward error: {e}")
 
-print("🚀 Forwarder started!")
-app.run()
+import asyncio
+
+app = Client("lp_forwarder", api_id=API_ID, api_hash=API_HASH, session_string=SESSION_STRING)
+
+@app.on_message(filters.chat(SOURCE_CHANNEL_ID))
+async def handle_message(client, message):
+    text = message.text or message.caption or ""
+    if not text:
+        return
+    if is_spam(text):
+        print(f"❌ Spam skipped: {text[:60]}")
+        return
+    if is_score(text):
+        print(f"✅ Score: {text[:80]}")
+        send_to_server(text)
+        try:
+            await client.forward_messages(DEST_CHANNEL_ID, SOURCE_CHANNEL_ID, message.id)
+            print("📨 Forwarded to private channel")
+        except Exception as e:
+            print(f"Forward error: {e}")
+
+async def main():
+    await app.start()
+    print("🚀 Forwarder started!")
+    await asyncio.get_event_loop().create_future()  # run forever
+
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+loop.run_until_complete(main())
