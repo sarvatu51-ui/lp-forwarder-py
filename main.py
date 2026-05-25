@@ -1,8 +1,9 @@
 import os
 import re
+import threading
 import requests
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from pyrogram import Client, filters
-from pyrogram.handlers import MessageHandler
 
 API_ID = int(os.environ.get("API_ID"))
 API_HASH = os.environ.get("API_HASH")
@@ -11,6 +12,21 @@ SOURCE_CHANNEL_ID = int(os.environ.get("SOURCE_CHANNEL_ID", "-1001736810240"))
 DEST_CHANNEL_ID = int(os.environ.get("DEST_CHANNEL_ID", "-1003961918227"))
 SERVER_URL = os.environ.get("SERVER_URL", "https://livepointprediction.onrender.com")
 BOT_SECRET = os.environ.get("BOT_SECRET", "lpscore2025secret")
+
+# Dummy HTTP server to keep Render happy
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b'Forwarder running!')
+    def log_message(self, format, *args):
+        pass
+
+def run_http():
+    port = int(os.environ.get("PORT", 8080))
+    HTTPServer(("0.0.0.0", port), Handler).serve_forever()
+
+threading.Thread(target=run_http, daemon=True).start()
 
 spam_keywords = [
     'join', 'follow', 'subscribe', 'click', 'http', 'www', 't.me',
