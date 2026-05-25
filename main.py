@@ -4,7 +4,8 @@ import asyncio
 import threading
 import requests
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from pyrogram import Client, filters
+from telethon import TelegramClient, events
+from telethon.sessions import StringSession
 
 API_ID = int(os.environ.get("API_ID"))
 API_HASH = os.environ.get("API_HASH")
@@ -75,31 +76,28 @@ def send_to_server(text):
     except Exception as e:
         print(f"Server send error: {e}")
 
-app = Client(
-    "lp_forwarder",
-    api_id=API_ID,
-    api_hash=API_HASH,
-    session_string=SESSION_STRING
-)
+async def main():
+    client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
 
-@app.on_message(filters.chat(SOURCE_CHANNEL_ID))
-async def handle_message(client, message):
-    text = message.text or message.caption or ""
-    if not text:
-        return
-    if is_spam(text):
-        print(f"❌ Spam skipped: {text[:60]}")
-        return
-    if is_score(text):
-        print(f"✅ Score: {text[:80]}")
-        send_to_server(text)
-        try:
-            await client.forward_messages(DEST_CHANNEL_ID, SOURCE_CHANNEL_ID, message.id)
-            print("📨 Forwarded to private channel")
-        except Exception as e:
-            print(f"Forward error: {e}")
+    @client.on(events.NewMessage(chats=SOURCE_CHANNEL_ID))
+    async def handle_message(event):
+        text = event.message.text or ""
+        if not text:
+            return
+        if is_spam(text):
+            print(f"❌ Spam skipped: {text[:60]}")
+            return
+        if is_score(text):
+            print(f"✅ Score: {text[:80]}")
+            send_to_server(text)
+            try:
+                await client.forward_messages(DEST_CHANNEL_ID, event.message)
+                print("📨 Forwarded to private channel")
+            except Exception as e:
+                print(f"Forward error: {e}")
 
-print("🚀 Forwarder started!")
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
-app.run()
+    await client.start()
+    print("🚀 Forwarder started!")
+    await client.run_until_disconnected()
+
+asyncio.run(main())
