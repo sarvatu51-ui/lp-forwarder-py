@@ -27,7 +27,7 @@ class Handler(BaseHTTPRequestHandler):
         pass
         
 def run_http():
-    port = int(os.environ.get("PORT", 8080))
+    port = int(os.environ.get("PORT", 10000))
     HTTPServer(("0.0.0.0", port), Handler).serve_forever()
 
 threading.Thread(target=run_http, daemon=True).start()
